@@ -77,17 +77,8 @@ Restart Expo after changing env vars (`npx expo start -c`).
 
 ### Security note
 
-The current **client-side API key** approach is acceptable for this assessment/demo, but **production apps should proxy AI requests through a secure backend** so private credentials are never embedded in the mobile bundle.
+I used the  **client-side API key** approach for this assessment/demo, but **production apps should proxy AI requests through a secure backend** so private credentials are never embedded in the mobile bundle.
 
-## Current status (Phase 4)
-
-- Polished welcome screen with layered food hero visual
-- Refined onboarding cards, animated progress bar, and step indicator
-- Premium meal recommendation cards with metadata icons and visual accents
-- Polished AI loading and error states
-- Meal detail screen with hero, metadata grid, and ingredient list
-- Shared UI system: AppButton (primary/secondary/ghost), Badge, ScreenHeader, AppSplash
-- Hydration splash to prevent route flicker on app restart
 
 ## License
 
