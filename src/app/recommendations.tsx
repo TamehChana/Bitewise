@@ -1,104 +1,152 @@
 import { Redirect, router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { RefreshCw, SlidersHorizontal } from 'lucide-react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppButton } from '@/components/ui/AppButton';
+import { AppSplash } from '@/components/ui/AppSplash';
 import { AppText } from '@/components/ui/AppText';
+import { Badge } from '@/components/ui/Badge';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { colors, radius, spacing } from '@/constants/theme';
-import { formatPreferencesSummary } from '@/features/recommendations/preferenceSummary';
+import { clearRecommendations as clearStoredRecommendations } from '@/services/storage.service';
+import { MealCard } from '@/features/recommendations/components/MealCard';
+import { RecommendationsError } from '@/features/recommendations/components/RecommendationsError';
+import { RecommendationsLoading } from '@/features/recommendations/components/RecommendationsLoading';
+import { buildPersonalizedSummary } from '@/features/recommendations/recommendation.prompt';
+import { useRecommendations } from '@/features/recommendations/useRecommendations';
+import { useStoreHydration } from '@/hooks/useStoreHydration';
 import { useAppStore } from '@/store/useAppStore';
+import { colors, radius, spacing } from '@/constants/theme';
 
 export default function RecommendationsScreen() {
   const userPreferences = useAppStore((state) => state.userPreferences);
   const onboardingCompleted = useAppStore((state) => state.onboardingCompleted);
-  const [hydrated, setHydrated] = useState(useAppStore.persist.hasHydrated());
+  const storedRecommendations = useAppStore((state) => state.recommendations);
+  const clearRecommendations = useAppStore((state) => state.clearRecommendations);
 
-  useEffect(() => {
-    const unsubscribe = useAppStore.persist.onFinishHydration(() => {
-      setHydrated(true);
-    });
+  const hydrated = useStoreHydration();
 
-    return unsubscribe;
-  }, []);
+  const {
+    status,
+    usedFallback,
+    loadingMessageIndex,
+    recommendations,
+    regenerate,
+    retry,
+  } = useRecommendations(userPreferences, storedRecommendations);
 
   if (!hydrated) {
-    return <View style={styles.loading} />;
+    return <AppSplash message="Preparing your recommendations..." />;
   }
 
   if (!onboardingCompleted) {
     return <Redirect href="/" />;
   }
 
-  const summary = userPreferences ? formatPreferencesSummary(userPreferences) : [];
+  if (!userPreferences) {
+    return <Redirect href="/onboarding" />;
+  }
+
+  const summary = buildPersonalizedSummary(userPreferences);
+  const isGenerating = status === 'loading';
+  const showResults = status === 'success' && recommendations && recommendations.length === 3;
+
+  const handleEditPreferences = () => {
+    clearRecommendations();
+    void clearStoredRecommendations();
+    router.push('/onboarding');
+  };
 
   return (
     <ScreenContainer>
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.hero}>
-          <AppText style={styles.emoji} variant="body">
-            ✨
+          <Badge label="Made for you ✨" />
+          <AppText variant="title">Your meal suggestions</AppText>
+          <AppText style={styles.summary} variant="subtitle">
+            {summary}
           </AppText>
-          <AppText variant="title">Your taste profile is ready</AppText>
-          <AppText variant="subtitle">
-            We&apos;re ready to generate meals that match your preferences.
-          </AppText>
+          <AppButton
+            fullWidth={false}
+            icon={SlidersHorizontal}
+            label="Edit preferences"
+            style={styles.editButton}
+            variant="ghost"
+            onPress={handleEditPreferences}
+          />
         </View>
 
-        {summary.length > 0 ? (
-          <View style={styles.summaryCard}>
-            <AppText style={styles.summaryTitle} variant="body">
-              Your preferences
-            </AppText>
-            {summary.map((line) => (
-              <AppText key={line} style={styles.summaryLine} variant="caption">
-                {line}
-              </AppText>
+        {isGenerating ? <RecommendationsLoading messageIndex={loadingMessageIndex} /> : null}
+
+        {status === 'error' ? (
+          <RecommendationsError
+            onEditPreferences={handleEditPreferences}
+            onRetry={() => void retry()}
+          />
+        ) : null}
+
+        {showResults ? (
+          <View style={styles.list}>
+            {usedFallback ? (
+              <View style={styles.fallbackBanner}>
+                <AppText variant="caption">
+                  Our AI chef is temporarily unavailable, so here are a few matches from
+                  BiteWise.
+                </AppText>
+              </View>
+            ) : null}
+
+            {recommendations.map((meal) => (
+              <MealCard
+                key={meal.id}
+                meal={meal}
+                onPress={() => router.push(`/meal/${meal.id}`)}
+              />
             ))}
           </View>
         ) : null}
 
-        <AppButton
-          label="View sample meal"
-          variant="secondary"
-          onPress={() => router.push('/meal/sample-meal')}
-        />
-      </View>
+        {showResults ? (
+          <AppButton
+            disabled={isGenerating}
+            icon={RefreshCw}
+            label="Regenerate suggestions"
+            loading={isGenerating}
+            variant="secondary"
+            onPress={() => void regenerate()}
+          />
+        ) : null}
+      </ScrollView>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
+  scrollContent: {
+    flexGrow: 1,
     gap: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.xl,
+    paddingTop: spacing.sm,
   },
   hero: {
     gap: spacing.sm,
   },
-  emoji: {
-    fontSize: 32,
-    marginBottom: spacing.xs,
+  summary: {
+    lineHeight: 26,
   },
-  summaryCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    gap: spacing.xs,
+  editButton: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.xs,
+    paddingHorizontal: 0,
   },
-  summaryTitle: {
-    fontWeight: '600',
-    marginBottom: spacing.xs,
+  fallbackBanner: {
+    backgroundColor: colors.successBackground,
+    borderRadius: radius.md,
+    padding: spacing.sm + 4,
   },
-  summaryLine: {
-    lineHeight: 20,
+  list: {
+    gap: spacing.md,
   },
 });

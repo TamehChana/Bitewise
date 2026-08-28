@@ -58,6 +58,15 @@ export async function getRecommendations(): Promise<MealRecommendation[] | null>
   return readItem<MealRecommendation[]>(STORAGE_KEYS.recommendations);
 }
 
+export async function clearRecommendations(): Promise<boolean> {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEYS.recommendations);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function clearAppStorage(): Promise<boolean> {
   try {
     await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));

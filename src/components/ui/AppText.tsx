@@ -2,7 +2,7 @@ import { Text, type TextProps, StyleSheet } from 'react-native';
 
 import { colors, fontSize } from '@/constants/theme';
 
-type AppTextVariant = 'title' | 'subtitle' | 'body' | 'caption';
+type AppTextVariant = 'display' | 'title' | 'section' | 'subtitle' | 'body' | 'caption';
 
 interface AppTextProps extends TextProps {
   variant?: AppTextVariant;
@@ -16,9 +16,21 @@ const styles = StyleSheet.create({
   base: {
     color: colors.text,
   },
+  display: {
+    fontSize: fontSize.hero,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+    lineHeight: 40,
+  },
   title: {
     fontSize: fontSize.xxl,
     fontWeight: '700',
+    lineHeight: 34,
+  },
+  section: {
+    fontSize: fontSize.xl,
+    fontWeight: '600',
+    lineHeight: 28,
   },
   subtitle: {
     fontSize: fontSize.lg,
@@ -32,6 +44,7 @@ const styles = StyleSheet.create({
   },
   caption: {
     fontSize: fontSize.sm,
+    lineHeight: 20,
     color: colors.muted,
   },
 });

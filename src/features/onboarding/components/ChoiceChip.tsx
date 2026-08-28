@@ -20,9 +20,9 @@ export function ChoiceChip({
 }: ChoiceChipProps) {
   return (
     <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected, disabled }}
       accessibilityLabel={label}
+      accessibilityRole="button"
+      accessibilityState={{ disabled, selected }}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
@@ -34,13 +34,17 @@ export function ChoiceChip({
     >
       <View style={styles.content}>
         {icon ? <Text style={styles.icon}>{icon}</Text> : null}
-        <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
+        <Text numberOfLines={2} style={[styles.label, selected && styles.labelSelected]}>
+          {label}
+        </Text>
       </View>
       {selected ? (
         <View style={styles.checkmark}>
           <Check color={colors.surface} size={14} strokeWidth={3} />
         </View>
-      ) : null}
+      ) : (
+        <View style={styles.checkPlaceholder} />
+      )}
     </Pressable>
   );
 }
@@ -50,9 +54,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 56,
+    minHeight: 60,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1.5,
     borderColor: colors.border,
@@ -64,7 +68,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.successBackground,
   },
   chipPressed: {
-    opacity: 0.92,
+    transform: [{ scale: 0.99 }],
+    opacity: 0.96,
   },
   chipDisabled: {
     opacity: 0.5,
@@ -77,7 +82,7 @@ const styles = StyleSheet.create({
     paddingRight: spacing.sm,
   },
   icon: {
-    fontSize: 20,
+    fontSize: 22,
   },
   label: {
     fontSize: fontSize.md,
@@ -90,11 +95,15 @@ const styles = StyleSheet.create({
     color: colors.primaryDark,
   },
   checkmark: {
-    width: 24,
-    height: 24,
+    width: 26,
+    height: 26,
     borderRadius: radius.full,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  checkPlaceholder: {
+    width: 26,
+    height: 26,
   },
 });

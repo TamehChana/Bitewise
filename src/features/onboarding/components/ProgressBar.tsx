@@ -1,6 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 
-import { colors, radius, spacing } from '@/constants/theme';
+import { colors, radius } from '@/constants/theme';
 
 interface ProgressBarProps {
   currentStep: number;
@@ -9,6 +10,21 @@ interface ProgressBarProps {
 
 export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
   const progress = Math.min(Math.max(currentStep / totalSteps, 0), 1);
+  const animatedWidth = useRef(new Animated.Value(progress)).current;
+
+  useEffect(() => {
+    Animated.timing(animatedWidth, {
+      toValue: progress,
+      duration: 280,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [animatedWidth, progress]);
+
+  const width = animatedWidth.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
     <View
@@ -16,14 +32,14 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
       accessibilityValue={{ min: 0, max: totalSteps, now: currentStep }}
       style={styles.track}
     >
-      <View style={[styles.fill, { width: `${progress * 100}%` }]} />
+      <Animated.View style={[styles.fill, { width }]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   track: {
-    height: 6,
+    height: 4,
     backgroundColor: colors.border,
     borderRadius: radius.full,
     overflow: 'hidden',

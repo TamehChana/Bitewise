@@ -3,15 +3,24 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  View,
   type PressableProps,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
+import type { LucideIcon } from 'lucide-react-native';
 
 import { colors, fontSize, radius, spacing } from '@/constants/theme';
 
-interface AppButtonProps extends Pick<PressableProps, 'onPress' | 'disabled'> {
+type AppButtonVariant = 'primary' | 'secondary' | 'ghost';
+
+interface AppButtonProps extends Pick<PressableProps, 'onPress' | 'disabled' | 'accessibilityLabel'> {
   label: string;
   loading?: boolean;
-  variant?: 'primary' | 'secondary';
+  variant?: AppButtonVariant;
+  icon?: LucideIcon;
+  fullWidth?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function AppButton({
@@ -20,32 +29,90 @@ export function AppButton({
   disabled = false,
   loading = false,
   variant = 'primary',
+  icon: Icon,
+  fullWidth = true,
+  style,
+  accessibilityLabel,
 }: AppButtonProps) {
   const isDisabled = disabled || loading;
-  const isPrimary = variant === 'primary';
 
   return (
     <Pressable
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.base,
-        isPrimary ? styles.primary : styles.secondary,
-        pressed && !isDisabled && (isPrimary ? styles.primaryPressed : styles.secondaryPressed),
+        variantStyles[variant],
+        fullWidth && styles.fullWidth,
+        pressed && !isDisabled && pressedStyles[variant],
         isDisabled && styles.disabled,
+        style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? colors.surface : colors.primary} />
+        <ActivityIndicator
+          color={variant === 'primary' ? colors.surface : colors.primary}
+          size="small"
+        />
       ) : (
-        <Text style={[styles.label, isPrimary ? styles.primaryLabel : styles.secondaryLabel]}>
-          {label}
-        </Text>
+        <View style={styles.content}>
+          {Icon ? <Icon color={iconColors[variant]} size={18} strokeWidth={2.25} /> : null}
+          <Text style={[styles.label, labelStyles[variant]]}>{label}</Text>
+        </View>
       )}
     </Pressable>
   );
 }
+
+const variantStyles = StyleSheet.create({
+  primary: {
+    backgroundColor: colors.primary,
+  },
+  secondary: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  ghost: {
+    backgroundColor: 'transparent',
+    minHeight: 44,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+  },
+});
+
+const pressedStyles = StyleSheet.create({
+  primary: {
+    backgroundColor: colors.primaryDark,
+  },
+  secondary: {
+    backgroundColor: colors.background,
+  },
+  ghost: {
+    opacity: 0.72,
+  },
+});
+
+const labelStyles = StyleSheet.create({
+  primary: {
+    color: colors.surface,
+  },
+  secondary: {
+    color: colors.text,
+  },
+  ghost: {
+    color: colors.primary,
+  },
+});
+
+const iconColors = {
+  primary: colors.surface,
+  secondary: colors.text,
+  ghost: colors.primary,
+} as const;
 
 const styles = StyleSheet.create({
   base: {
@@ -56,19 +123,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primary: {
-    backgroundColor: colors.primary,
+  fullWidth: {
+    alignSelf: 'stretch',
   },
-  primaryPressed: {
-    backgroundColor: colors.primaryDark,
-  },
-  secondary: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  secondaryPressed: {
-    backgroundColor: colors.background,
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   disabled: {
     opacity: 0.5,
@@ -76,11 +137,5 @@ const styles = StyleSheet.create({
   label: {
     fontSize: fontSize.md,
     fontWeight: '600',
-  },
-  primaryLabel: {
-    color: colors.surface,
-  },
-  secondaryLabel: {
-    color: colors.text,
   },
 });

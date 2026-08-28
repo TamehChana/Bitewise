@@ -1,16 +1,10 @@
-import { ChevronLeft } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/ui/AppButton';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { colors, fontSize, spacing } from '@/constants/theme';
 import { ChoiceChip } from '@/features/onboarding/components/ChoiceChip';
 import { ProgressBar } from '@/features/onboarding/components/ProgressBar';
@@ -19,6 +13,7 @@ import {
   buildUserPreferences,
   isOptionSelected,
   isStepValid,
+  preferencesToDraft,
   toggleAllergySelection,
   toggleCuisineSelection,
 } from '@/features/onboarding/onboarding.utils';
@@ -32,6 +27,7 @@ import {
   TOTAL_QUESTIONS,
 } from '@/features/onboarding/questions';
 import {
+  clearRecommendations as clearStoredRecommendations,
   saveOnboardingCompleted,
   savePreferences,
 } from '@/services/storage.service';
@@ -40,9 +36,13 @@ import type { Allergy, Cuisine } from '@/types/preferences';
 
 export default function OnboardingScreen() {
   const completeOnboarding = useAppStore((state) => state.completeOnboarding);
+  const clearRecommendations = useAppStore((state) => state.clearRecommendations);
+  const existingPreferences = useAppStore((state) => state.userPreferences);
 
   const [stepIndex, setStepIndex] = useState(0);
-  const [draft, setDraft] = useState<OnboardingDraft>(EMPTY_DRAFT);
+  const [draft, setDraft] = useState<OnboardingDraft>(() =>
+    existingPreferences ? preferencesToDraft(existingPreferences) : EMPTY_DRAFT,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const currentQuestion = ONBOARDING_QUESTIONS[stepIndex];
@@ -106,6 +106,8 @@ export default function OnboardingScreen() {
 
     try {
       const preferences = buildUserPreferences(draft);
+      clearRecommendations();
+      await clearStoredRecommendations();
       completeOnboarding(preferences);
       await savePreferences(preferences);
       await saveOnboardingCompleted(true);
@@ -113,7 +115,7 @@ export default function OnboardingScreen() {
     } catch {
       setIsSubmitting(false);
     }
-  }, [canContinue, completeOnboarding, draft, isLastStep, isSubmitting]);
+  }, [canContinue, clearRecommendations, completeOnboarding, draft, isLastStep, isSubmitting]);
 
   const handleOptionPress = useCallback(
     (value: string) => {
@@ -128,18 +130,12 @@ export default function OnboardingScreen() {
 
   return (
     <ScreenContainer>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={12}
-          onPress={handleBack}
-          style={styles.backButton}
-        >
-          <ChevronLeft color={colors.text} size={24} />
-          <Text style={styles.backLabel}>Back</Text>
-        </Pressable>
+      <ScreenHeader backLabel="Back" onBack={handleBack} />
 
+      <View style={styles.progressSection}>
+        <Text style={styles.progressLabel}>
+          Step {stepIndex + 1} of {TOTAL_QUESTIONS}
+        </Text>
         <ProgressBar currentStep={stepIndex + 1} totalSteps={TOTAL_QUESTIONS} />
       </View>
 
@@ -149,8 +145,6 @@ export default function OnboardingScreen() {
         showsVerticalScrollIndicator={false}
       >
         <QuestionHeader
-          step={stepIndex + 1}
-          totalSteps={TOTAL_QUESTIONS}
           subtitle={currentQuestion.subtitle}
           title={currentQuestion.title}
         />
@@ -181,23 +175,14 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    gap: spacing.md,
-    paddingTop: spacing.sm,
+  progressSection: {
+    gap: spacing.sm,
     paddingBottom: spacing.md,
   },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: spacing.xs,
-    minHeight: 44,
-    paddingRight: spacing.sm,
-  },
-  backLabel: {
-    fontSize: fontSize.md,
-    fontWeight: '500',
-    color: colors.text,
+  progressLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.muted,
   },
   scrollContent: {
     flexGrow: 1,

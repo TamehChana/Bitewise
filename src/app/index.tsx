@@ -1,29 +1,22 @@
 import { Redirect, router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { AppButton } from '@/components/ui/AppButton';
+import { AppSplash } from '@/components/ui/AppSplash';
 import { AppText } from '@/components/ui/AppText';
+import { Badge } from '@/components/ui/Badge';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { colors, fontSize, radius, spacing } from '@/constants/theme';
+import { FoodHeroVisual } from '@/components/welcome/FoodHeroVisual';
+import { colors, spacing } from '@/constants/theme';
+import { useStoreHydration } from '@/hooks/useStoreHydration';
 import { useAppStore } from '@/store/useAppStore';
-
-const FOOD_EMOJIS = ['🥗', '🍝', '🌮', '🍣', '🥘'];
 
 export default function WelcomeScreen() {
   const onboardingCompleted = useAppStore((state) => state.onboardingCompleted);
-  const [hydrated, setHydrated] = useState(useAppStore.persist.hasHydrated());
-
-  useEffect(() => {
-    const unsubscribe = useAppStore.persist.onFinishHydration(() => {
-      setHydrated(true);
-    });
-
-    return unsubscribe;
-  }, []);
+  const hydrated = useStoreHydration();
 
   if (!hydrated) {
-    return <View style={styles.loading} />;
+    return <AppSplash />;
   }
 
   if (onboardingCompleted) {
@@ -34,25 +27,15 @@ export default function WelcomeScreen() {
     <ScreenContainer>
       <View style={styles.content}>
         <View style={styles.hero}>
-          <View style={styles.emojiRow}>
-            {FOOD_EMOJIS.map((emoji) => (
-              <View key={emoji} style={styles.emojiBubble}>
-                <Text style={styles.emoji}>{emoji}</Text>
-              </View>
-            ))}
-          </View>
+          <FoodHeroVisual />
 
           <View style={styles.textBlock}>
-            <Text style={styles.badge}>AI-powered meal suggestions</Text>
-            <AppText style={styles.title} variant="title">
-              BiteWise
-            </AppText>
-            <AppText style={styles.tagline} variant="subtitle">
-              Food that understands you.
-            </AppText>
+            <Badge label="AI-powered meal suggestions" />
+            <AppText variant="display">BiteWise</AppText>
+            <AppText variant="subtitle">Food that understands you.</AppText>
             <AppText style={styles.supporting} variant="body">
-              Tell us what you enjoy, and BiteWise will create meal suggestions around
-              your taste, goals, budget, and lifestyle.
+              Tell us what you enjoy, and BiteWise will create meal suggestions around your
+              taste, goals, budget, and lifestyle.
             </AppText>
           </View>
         </View>
@@ -64,10 +47,6 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   content: {
     flex: 1,
     justifyContent: 'space-between',
@@ -78,45 +57,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xl,
   },
-  emojiRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  emojiBubble: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  emoji: {
-    fontSize: 24,
-  },
   textBlock: {
     gap: spacing.md,
-  },
-  badge: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.successBackground,
-    color: colors.primary,
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    overflow: 'hidden',
-  },
-  title: {
-    fontSize: fontSize.hero,
-    letterSpacing: -0.5,
-  },
-  tagline: {
-    fontSize: fontSize.xl,
-    lineHeight: 28,
+    alignItems: 'flex-start',
   },
   supporting: {
     color: colors.muted,

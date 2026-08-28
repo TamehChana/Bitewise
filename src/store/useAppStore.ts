@@ -13,6 +13,7 @@ interface AppState {
   updatePreferences: (updates: Partial<UserPreferences>) => void;
   completeOnboarding: (preferences: UserPreferences) => void;
   setRecommendations: (recommendations: MealRecommendation[]) => void;
+  clearRecommendations: () => void;
   resetOnboarding: () => void;
   resetApp: () => void;
 }
@@ -42,9 +43,12 @@ export const useAppStore = create<AppState>()(
         set({
           onboardingCompleted: true,
           userPreferences: preferences,
+          recommendations: null,
         }),
 
       setRecommendations: (recommendations) => set({ recommendations }),
+
+      clearRecommendations: () => set({ recommendations: null }),
 
       resetOnboarding: () =>
         set({

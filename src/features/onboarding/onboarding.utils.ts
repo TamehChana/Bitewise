@@ -3,6 +3,17 @@ import type { UserPreferences } from '@/types/preferences';
 
 import type { OnboardingDraft, QuestionId } from './onboarding.types';
 
+export function preferencesToDraft(preferences: UserPreferences): OnboardingDraft {
+  return {
+    diet: preferences.diet,
+    goal: preferences.goal,
+    cuisines: [...preferences.cuisines],
+    allergies: [...preferences.allergies],
+    cookingTime: preferences.cookingTime,
+    budget: preferences.budget,
+  };
+}
+
 export function isStepValid(draft: OnboardingDraft, questionId: QuestionId): boolean {
   switch (questionId) {
     case 'diet':
